@@ -28,6 +28,7 @@
 {zlib, @zlib@}.
 {riak, @riak@}.
 {redis, @redis@}.
+{amqp_client, @amqp_client@}.
 {json, @json@}.
 {elixir, @elixir@}.
 {lager, @lager@}.

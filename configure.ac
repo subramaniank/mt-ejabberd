@@ -106,10 +106,10 @@ AC_ARG_ENABLE(mssql,
 esac],[db_type=generic])
 
 AC_ARG_ENABLE(all,
-[AC_HELP_STRING([--enable-all], [same as --enable-nif --enable-odbc --enable-mysql --enable-pgsql --enable-sqlite --enable-pam --enable-zlib --enable-riak --enable-redis --enable-json --enable-elixir --enable-iconv --enable-debug --enable-lager --enable-tools (useful for Dialyzer checks, default: no)])],
+[AC_HELP_STRING([--enable-all], [same as --enable-nif --enable-odbc --enable-mysql --enable-pgsql --enable-sqlite --enable-pam --enable-zlib --enable-riak --enable-redis --enable-amqp-client --enable-json --enable-elixir --enable-iconv --enable-debug --enable-lager --enable-tools (useful for Dialyzer checks, default: no)])],
 [case "${enableval}" in
-  yes) nif=true odbc=true mysql=true pgsql=true sqlite=true pam=true zlib=true riak=true redis=true json=true elixir=true iconv=true debug=true lager=true tools=true ;;
-  no) nif=false odbc=false mysql=false pgsql=false sqlite=false pam=false zlib=false riak=false redis=false json=false elixir=false iconv=false debug=false lager=false tools=false ;;
+  yes) nif=true odbc=true mysql=true pgsql=true sqlite=true pam=true zlib=true riak=true redis=true amqp_client=true json=true elixir=true iconv=true debug=true lager=true tools=true ;;
+  no) nif=false odbc=false mysql=false pgsql=false sqlite=false pam=false zlib=false riak=false redis=false amqp_client=false json=false elixir=false iconv=false debug=false lager=false tools=false ;;
   *) AC_MSG_ERROR(bad value ${enableval} for --enable-all) ;;
 esac],[])
 
@@ -193,6 +193,14 @@ AC_ARG_ENABLE(redis,
   *) AC_MSG_ERROR(bad value ${enableval} for --enable-redis) ;;
 esac],[if test "x$redis" = "x"; then redis=false; fi])
 
+AC_ARG_ENABLE(amqp_client,
+[AC_HELP_STRING([--enable-amqp-client], [enable AMQP client support(default: no)])],
+[case "${enableval}" in
+  yes) amqp_client=true ;;
+  no) amqp_client=false ;;
+  *) AC_MSG_ERROR(bad value ${enableval} for --enable-amqp-client) ;;
+esac],[if test "x$amqp_client" = "x"; then amqp_client=false; fi])
+
 AC_ARG_ENABLE(json,
 [AC_HELP_STRING([--enable-json], [enable JSON support for mod_bosh (default: no)])],
 [case "${enableval}" in
@@ -274,6 +282,7 @@ AC_SUBST(pam)
 AC_SUBST(zlib)
 AC_SUBST(riak)
 AC_SUBST(redis)
+AC_SUBST(amqp_client)
 AC_SUBST(json)
 AC_SUBST(elixir)
 AC_SUBST(iconv)
