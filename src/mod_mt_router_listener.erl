@@ -12,9 +12,9 @@
 
 -record('basic.ack', {delivery_tag = 0, multiple = false}).
 
--record(amqp_params_network, {username           = <<"guest">>,
-                              password           = <<"guest">>,
-                              virtual_host       = <<"/">>,
+-record(amqp_params_network, {username           = <<"ejabberd">>,
+                              password           = <<"magictiger">>,
+                              virtual_host       = <<"msg_server">>,
                               host               = "localhost",
                               port               = undefined,
                               channel_max        = 0,
@@ -56,7 +56,7 @@
                         arguments = []} ).
 
 
--record('basic.consume', {ticket = 0, queue = <<"">>, consumer_tag = <<"">>, no_local = false, no_ack = false, exclusive = false, nowait = false, arguments = []}).
+-record('basic.consume', {ticket = 0, queue = <<"">>, consumer_tag = <<"">>, no_local = false, no_ack = true, exclusive = false, nowait = false, arguments = []}).
 -record('basic.consume_ok', {consumer_tag}).
 
 %% gen_mod callbacks
@@ -107,9 +107,9 @@ init([Host, Opts]) ->
     ?INFO_MSG("Rabbitconsumer will be started here", []),
     {ok, RabbitConnection} = get_rabbitmq_client(),
     {ok, Channel} = amqp_connection:open_channel(RabbitConnection),
-    amqp_channel:call(Channel, #'exchange.declare'{exchange = <<"plustxtExchange">>}),
+    amqp_channel:call(Channel, #'exchange.declare'{exchange = <<"sender_receiver">>}),
     amqp_channel:call(Channel, #'queue.declare'{queue = <<"EjabInQ">>}),
-    amqp_channel:call(Channel, #'queue.bind'{queue = <<"EjabInQ">>, exchange = <<"plustxtExchange">>}),
+    amqp_channel:call(Channel, #'queue.bind'{queue = <<"EjabInQ">>, exchange = <<"sender_receiver">>}),
     Sub = #'basic.consume'{queue = <<"EjabInQ">>},
       #'basic.consume_ok'{consumer_tag = Tag} =
         amqp_channel:call(Channel, Sub), %% the caller is the subscriber

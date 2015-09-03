@@ -7,9 +7,9 @@
 -include("logger.hrl").
 -include("jlib.hrl").
 
--record(amqp_params_network, {username           = <<"guest">>,
-                              password           = <<"guest">>,
-                              virtual_host       = <<"/">>,
+-record(amqp_params_network, {username           = <<"ejabberd">>,
+                              password           = <<"magictiger">>,
+                              virtual_host       = <<"msg_server">>,
                               host               = "localhost",
                               port               = undefined,
                               channel_max        = 0,
@@ -158,13 +158,13 @@ push_message_to_queue(MessageStrList) ->
     ?INFO_MSG("MSG JSON ~p~n", [jiffy:encode(MessageStrList)]),
     {ok, RabbitConnection} = get_rabbitmq_client(),
     {ok, Channel} = amqp_connection:open_channel(RabbitConnection),
-    amqp_channel:call(Channel, #'exchange.declare'{exchange = <<"plustxtExchange">>}),
-    amqp_channel:call(Channel, #'queue.declare'{queue = <<"MainQ">>}),
-    amqp_channel:call(Channel, #'queue.bind'{queue = <<"MainQ">>, exchange = <<"plustxtExchange">>}),
+    amqp_channel:call(Channel, #'exchange.declare'{exchange = <<"sender_receiver">>}),
+    amqp_channel:call(Channel, #'queue.declare'{queue = <<"EjabOutQ">>}),
+    amqp_channel:call(Channel, #'queue.bind'{queue = <<"EjabOutQ">>, exchange = <<"sender_receiver">>}),
     amqp_channel:cast(Channel,
                       #'basic.publish'{
-                        exchange = <<"plustxtExchange">>,
-                        routing_key = <<"MainQ">>},
+                        exchange = <<"sender_receiver">>,
+                        routing_key = <<"EjabOutQ">>},
                       #amqp_msg{payload = MessageStrList}),
     ok = amqp_channel:close(Channel),
     ok.
