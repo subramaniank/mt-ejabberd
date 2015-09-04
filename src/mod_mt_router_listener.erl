@@ -131,16 +131,28 @@ handle_info(_Info, State) ->
                 MessageJson = jiffy:decode(MessageStr, [return_maps]),
 		FromJid = jlib:make_jid(maps:get(<<"from_user">>, MessageJson),maps:get(<<"from_domain">>, MessageJson),maps:get(<<"from_resource">>,MessageJson)),
 	 	ToJid = jlib:make_jid(maps:get(<<"to_user">>, MessageJson), maps:get(<<"to_domain">>, MessageJson),maps:get(<<"to_resource">>, MessageJson)),
+		MessageType = maps:get(<<"type">>, MessageJson),
 		Mid = maps:get(<<"mid">>, MessageJson),
 		MsgBody = maps:get(<<"body">>, MessageJson),
-		XmlBody = {xmlel, <<"message">>,
-     			[{<<"type">>, <<"chat">>}, {<<"id">>, Mid}, {<<"mt_routed">>,<<"true">>}],
-     			[{xmlel, <<"body">>, [], [{xmlcdata, MsgBody}]}]
-    		},
 		?INFO_MSG("Message from ~p", [FromJid]),
 		?INFO_MSG("Message to ~p", [ToJid]),
 		?INFO_MSG("Message mid ~p", [Mid]),
-		ejabberd_router:route(FromJid, ToJid, XmlBody)
+		case MessageType of 
+			<<"jabber_msg">> ->	
+				XmlBody = {xmlel, <<"message">>,
+     					[{<<"type">>, <<"chat">>}, {<<"id">>, Mid}, {<<"mt_routed">>,<<"true">>}],
+     					[{xmlel, <<"body">>, [], [{xmlcdata, MsgBody}]}]
+    				},
+				ejabberd_router:route(FromJid, ToJid, XmlBody);
+			<<"jabber_msg_received">> ->
+				XmlBody = {xmlel,<<"message">>,[{<<"to">>,jlib:jid_to_string(ToJid)},{<<"type">>,<<"chat">>},{<<"mt_routed">>,<<"true">>},{<<"id">>,Mid}],[{xmlel,<<"displayed">>,[{<<"xmlns">>,<<"urn:xmpp:chat-markers:0">>},{<<"id">>,maps:get(<<"received">>,MessageJson)}],[{xmlcdata,maps:get(<<"received">>,MessageJson)}]},{xmlel,<<"meta">>,[],[]}]},
+				ejabberd_router:route(FromJid, ToJid, XmlBody);
+			<<"jabber_msg_displayed">> ->
+                                XmlBody = {xmlel,<<"message">>,[{<<"to">>,jlib:jid_to_string(ToJid)},{<<"type">>,<<"chat">>},{<<"mt_routed">>,<<"true">>},{<<"id">>,Mid}],[{xmlel,<<"displayed">>,[{<<"xmlns">>,<<"urn:xmpp:chat-markers:0">>},{<<"id">>,maps:get(<<"displayed">>,MessageJson)}],[{xmlcdata,maps:get(<<"displayed">>,MessageJson)}]},{xmlel,<<"meta">>,[],[]}]},
+				ejabberd_router:route(FromJid, ToJid, XmlBody);
+			_ ->
+				?ERROR_MSG("Very very unexpected type ~p", [MessageType])
+		end	
     end,
     {noreply, State}.
 
