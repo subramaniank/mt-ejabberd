@@ -135,17 +135,34 @@ prepare_message_for_rabbitmq(FromToPacket) ->
 		?INFO_MSG("TRESOURCE ~p~n", [Tresource]),
 		?INFO_MSG("MID ~p", [Mid]),
 		Body = xml:get_subtag_cdata(Packet, <<"body">>),
+		Received = xml:get_subtag_cdata(Packet, <<"received">>),
+		Displayed = xml:get_subtag_cdata(Packet, <<"displayed">>),
 		?INFO_MSG("BODY ~p", [Body]),
-		QueueMessage = jiffy:encode(#{<<"from_user">> => Fuser,
+		QueueMessageMap = #{<<"from_user">> => Fuser,
 					     <<"from_domain">>=> Fdomain,
 					     <<"from_resource">> => Fresource,
 					     <<"to_user">> => Tuser,
 					     <<"to_domain">> => Tdomain,
 					     <<"to_resource">> => Tresource,
 					     <<"mid">> => Mid,
-					     <<"body">> => Body,
-					     <<"type">> => <<"jabber_msg">>
-					}),
+					     <<"body">> => Body
+					},
+		case Displayed of
+			<<"">> ->
+				?INFO_MSG("Not 'DISPLAYED' ~p", []),
+				case Received of 
+					<<"">> -> 
+						?INFO_MSG("Not 'RECEIVED' ~p", []),
+						?INFO_MSG("Assume message ~p", []),
+						QueueMessage = jiffy:encode(maps:put(<<"type">>, <<"jabber_msg">>, QueueMessageMap));
+					_ ->
+						QueueMessageTemp = maps:put(<<"recieved">>, Received, QueueMessageMap),
+						QueueMessage = jiffy:encode(maps:put(<<"type">>, <<"jabber_msg_recieved">>, QueueMessageTemp))
+				end;	
+			_ -> 
+				QueueMessageTemp = maps:put(<<"displayed">>, Displayed, QueueMessageMap),
+				QueueMessage = jiffy:encode(maps:put(<<"type">>, <<"jabber_msg_displayed">>, QueueMessageTemp))
+		end,
 		?INFO_MSG("BODY ~p", [QueueMessage]),
 		{ok, queued_to_rabbitmq, QueueMessage};
 	<<"iq">> ->
