@@ -156,8 +156,8 @@ prepare_message_for_rabbitmq(FromToPacket) ->
 						?INFO_MSG("Assume message ~p", []),
 						QueueMessage = jiffy:encode(maps:put(<<"type">>, <<"jabber_msg">>, QueueMessageMap));
 					_ ->
-						QueueMessageTemp = maps:put(<<"recieved">>, Received, QueueMessageMap),
-						QueueMessage = jiffy:encode(maps:put(<<"type">>, <<"jabber_msg_recieved">>, QueueMessageTemp))
+						QueueMessageTemp = maps:put(<<"received">>, Received, QueueMessageMap),
+						QueueMessage = jiffy:encode(maps:put(<<"type">>, <<"jabber_msg_received">>, QueueMessageTemp))
 				end;	
 			_ -> 
 				QueueMessageTemp = maps:put(<<"displayed">>, Displayed, QueueMessageMap),
