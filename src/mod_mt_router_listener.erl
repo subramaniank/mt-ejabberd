@@ -133,12 +133,12 @@ handle_info(_Info, State) ->
 	 	ToJid = jlib:make_jid(maps:get(<<"to_user">>, MessageJson), maps:get(<<"to_domain">>, MessageJson),maps:get(<<"to_resource">>, MessageJson)),
 		MessageType = maps:get(<<"type">>, MessageJson),
 		Mid = maps:get(<<"mid">>, MessageJson),
-		MsgBody = maps:get(<<"body">>, MessageJson),
 		?INFO_MSG("Message from ~p", [FromJid]),
 		?INFO_MSG("Message to ~p", [ToJid]),
 		?INFO_MSG("Message mid ~p", [Mid]),
 		case MessageType of 
 			<<"jabber_msg">> ->	
+				MsgBody = maps:get(<<"body">>, MessageJson),
 				XmlBody = {xmlel, <<"message">>,
      					[{<<"type">>, <<"chat">>}, {<<"id">>, Mid}, {<<"mt_routed">>,<<"true">>}],
      					[{xmlel, <<"body">>, [], [{xmlcdata, MsgBody}]}]
