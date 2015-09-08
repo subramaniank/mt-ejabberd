@@ -27,7 +27,7 @@
 			      exchange, 
 			      type = <<"direct">>, 
 			      passive = false, 
-			      durable = false, 
+			      durable = true, 
 			      auto_delete = false, 
 			      internal = false, 
 			      nowait = false, 
@@ -36,7 +36,7 @@
 -record('queue.declare', { ticket = 0, 
 			   queue = <<"">>, 
 			   passive = false, 
-			   durable = false, 
+			   durable = true, 
 			   exclusive = false, 
 			   auto_delete = false, 
 			   nowait = false, 
@@ -70,7 +70,7 @@
 		     app_id, 
 		     cluster_id}).
 
--record(amqp_msg, { props = #'P_basic'{}, 
+-record(amqp_msg, { props = #'P_basic'{delivery_mode = 2}, 
 		    payload = <<>>}).
 
 start(Host, Opts) ->
