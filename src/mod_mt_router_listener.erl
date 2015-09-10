@@ -138,9 +138,11 @@ handle_info(_Info, State) ->
 		?INFO_MSG("Message mid ~p", [Mid]),
 		case MessageType of 
 			<<"jabber_msg">> ->	
+				SentOn = maps:get(<<"sent_on">>, MessageJson),
 				MsgBody = maps:get(<<"body">>, MessageJson),
+				Chat = maps:get(<<"chat_thread">>, MessageJson),
 				XmlBody = {xmlel, <<"message">>,
-     					[{<<"type">>, <<"chat">>}, {<<"id">>, Mid}, {<<"mt_routed">>,<<"true">>}],
+     					[{<<"type">>, <<"chat">>}, {<<"id">>, Mid}, {<<"mt_routed">>,<<"true">>}, {<<"chat_thread">>, Chat}, {<<"sent_on">>, SentOn}],
      					[{xmlel, <<"body">>, [], [{xmlcdata, MsgBody}]}]
     				},
 				ejabberd_router:route(FromJid, ToJid, XmlBody);

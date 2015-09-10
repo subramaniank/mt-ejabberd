@@ -135,38 +135,32 @@ prepare_message_for_rabbitmq(FromToPacket) ->
 		?INFO_MSG("TRESOURCE ~p~n", [Tresource]),
 		?INFO_MSG("MID ~p", [Mid]),
 		BodyXmlObj = xml:get_subtag(Packet, <<"body">>),
+		SentOnXmlObj = xml:get_subtag(Packet, <<"sent_on">>),
+		SentOn = case SentOnXmlObj of false -> false; _ -> xml:get_tag_attr_s(<<"sent_on">>, SentOnXmlObj) end,
+		Body = case BodyXmlObj of false -> false; _ -> xml:get_subtag_cdata(Packet, <<"body">>) end,
+		ChatXmlObj = xml:get_subtag(Packet, <<"chat_thread">>),
+		Chat = case ChatXmlObj of false -> false; _ -> xml:get_tag_attr_s(<<"id">>, ChatXmlObj) end,
 		ReceivedXmlObj = xml:get_subtag(Packet, <<"received">>),
-		?INFO_MSG("XML Object received ~p~n", [ReceivedXmlObj]),
+		Received = case ReceivedXmlObj of false -> false; _ -> xml:get_tag_attr_s(<<"id">>, ReceivedXmlObj) end,
 		DisplayedXmlObj = xml:get_subtag(Packet, <<"displayed">>),
-		?INFO_MSG("XML Object received ~p~n", [DisplayedXmlObj]),
+		Displayed = case DisplayedXmlObj of false -> false; _ -> xml:get_tag_attr_s(<<"id">>, DisplayedXmlObj) end,
+		MsgType = get_message_type(ReceivedXmlObj, DisplayedXmlObj, BodyXmlObj),
 		QueueMessageMap = #{<<"from_user">> => Fuser,
-					     <<"from_domain">>=> Fdomain,
-					     <<"from_resource">> => Fresource,
-					     <<"to_user">> => Tuser,
-					     <<"to_domain">> => Tdomain,
-					     <<"to_resource">> => Tresource,
-					     <<"mid">> => Mid
-					},
-		case DisplayedXmlObj of
-			false ->
-				?INFO_MSG("Not 'DISPLAYED' ~p", []),
-				case ReceivedXmlObj of 
-					false -> 
-						?INFO_MSG("Not 'RECEIVED' ~p", []),
-						?INFO_MSG("Assume message ~p", []),
-						Body = xml:get_subtag_cdata(Packet, <<"body">>),
-						QueueMessageTemp = maps:put(<<"body">>, Body, QueueMessageMap),
-						QueueMessage = jiffy:encode(maps:put(<<"type">>, <<"jabber_msg">>, QueueMessageTemp));
-					_ ->
-						Received = xml:get_tag_attr_s(<<"id">>, ReceivedXmlObj),
-						QueueMessageTemp = maps:put(<<"received">>, Received, QueueMessageMap),
-						QueueMessage = jiffy:encode(maps:put(<<"type">>, <<"jabber_msg_received">>, QueueMessageTemp))
-				end;	
-			_ ->
-				Displayed = xml:get_tag_attr_s(<<"id">>, DisplayedXmlObj),
-				QueueMessageTemp = maps:put(<<"displayed">>, Displayed, QueueMessageMap),
-				QueueMessage = jiffy:encode(maps:put(<<"type">>, <<"jabber_msg_displayed">>, QueueMessageTemp))
-		end,
+				    <<"from_domain">>=> Fdomain,
+				    <<"from_resource">> => Fresource,
+				    <<"to_user">> => Tuser,
+				    <<"to_domain">> => Tdomain,
+				    <<"to_resource">> => Tresource,
+				    <<"mid">> => Mid,
+				    <<"body">> => Body,
+				    <<"received">> => Received,
+				    <<"displayed">> => Displayed,
+				    <<"chat_thread">> => Chat,
+				    <<"sent_on">> => SentOn,
+				    <<"type">> => MsgType
+		},
+		Pred = fun(K,V) -> not is_boolean(V) end,
+		QueueMessage = jiffy:encode(maps:filter(Pred, QueueMessageMap)),
 		?INFO_MSG("BODY ~p", [QueueMessage]),
 		{ok, queued_to_rabbitmq, QueueMessage};
 	<<"iq">> ->
@@ -174,6 +168,16 @@ prepare_message_for_rabbitmq(FromToPacket) ->
 	<<"presence">> ->
 		{ok, presence}
     end.
+
+get_message_type(ReceivedXmlObj, DisplayedXmlObj, BodyXmlObj) ->
+    MessageTypeMap = #{<<"jabber_msg">> => BodyXmlObj,
+		       <<"jabber_msg_displayed">> => DisplayedXmlObj,
+		       <<"jabber_msg_received">> => ReceivedXmlObj
+    },
+    Pred = fun(K,V) -> not is_boolean(V) end,
+    hd(maps:keys(maps:filter(Pred, MessageTypeMap))).
+    
+
 
 push_message_to_queue(MessageStrList) ->
     ?INFO_MSG("MSG JSON ~p~n", [jiffy:encode(MessageStrList)]),
