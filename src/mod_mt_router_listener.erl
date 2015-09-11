@@ -141,8 +141,9 @@ handle_info(_Info, State) ->
 				SentOn = maps:get(<<"sent_on">>, MessageJson),
 				MsgBody = maps:get(<<"body">>, MessageJson),
 				Chat = maps:get(<<"chat_thread">>, MessageJson),
+				MsgType = maps:get(<<"msg_type">>, MessageJson),
 				XmlBody = {xmlel, <<"message">>,
-     					[{<<"type">>, <<"chat">>}, {<<"id">>, Mid}, {<<"mt_routed">>,<<"true">>}, {<<"chat_thread">>, Chat}, {<<"sent_on">>, SentOn}],
+     					[{<<"type">>, <<"chat">>}, {<<"id">>, Mid}, {<<"mt_routed">>,<<"true">>}, {<<"chat_thread">>, Chat}, {<<"sent_on">>, SentOn}, {<<"msg_type">>, MsgType}],
      					[{xmlel, <<"body">>, [], [{xmlcdata, MsgBody}]}]
     				},
 				ejabberd_router:route(FromJid, ToJid, XmlBody);
