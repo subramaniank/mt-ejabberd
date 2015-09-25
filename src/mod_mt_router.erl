@@ -91,6 +91,9 @@ stop(Host) ->
 
 read_packet({From, To, Packet}) ->
     %% {To, From, Packet}.
+    ?DEBUG("Message to ~p~n", [To]),
+    ?DEBUG("Message from ~p~n", [From]),
+    ?DEBUG("Message packet ~p~n", [Packet]),
     MtRouted = xml:get_tag_attr_s(<<"mt_routed">>, Packet),
     case MtRouted of 
 	<<"true">> ->
@@ -111,9 +114,9 @@ read_packet({From, To, Packet}) ->
 
 prepare_message_for_rabbitmq(FromToPacket) ->
     {From, To, Packet} = FromToPacket,
-    ?INFO_MSG("mod_mt_router a package has been sent coming from: ~p", [From]),
-    ?INFO_MSG("mod_mt_router a package has been sent to: ~p", [To]),
-    ?INFO_MSG("mod_mt_router a package has been sent with the following packet: ~p",     [Packet]),
+    ?DEBUG("mod_mt_router a package has been sent coming from: ~p", [From]),
+    ?DEBUG("mod_mt_router a package has been sent to: ~p", [To]),
+    ?DEBUG("mod_mt_router a package has been sent with the following packet: ~p",     [Packet]),
     Fuser = From#jid.luser,
     Fdomain = From#jid.lserver,
     Fresource = From#jid.lresource,
@@ -122,18 +125,18 @@ prepare_message_for_rabbitmq(FromToPacket) ->
     Tresource = To#jid.lresource,
     {_, Name, _, MList} = Packet,
     Mid = xml:get_tag_attr_s(<<"id">>, Packet),
-    ?INFO_MSG("mod_mt_router MID is ~p", [Mid]),
+    ?DEBUG("mod_mt_router MID is ~p", [Mid]),
 
 
     case Name of 
 	<<"message">> ->
-		?INFO_MSG("FUSER ~p~n", [Fuser]),
-		?INFO_MSG("FDOMAIN ~p~n", [Fdomain]),
-		?INFO_MSG("FRESOURCE ~p~n", [Fresource]),
-		?INFO_MSG("TUSER ~p~n", [Tuser]),
-		?INFO_MSG("TDOMAIN ~p~n", [Tdomain]),
-		?INFO_MSG("TRESOURCE ~p~n", [Tresource]),
-		?INFO_MSG("MID ~p", [Mid]),
+		?DEBUG("FUSER ~p~n", [Fuser]),
+		?DEBUG("FDOMAIN ~p~n", [Fdomain]),
+		?DEBUG("FRESOURCE ~p~n", [Fresource]),
+		?DEBUG("TUSER ~p~n", [Tuser]),
+		?DEBUG("TDOMAIN ~p~n", [Tdomain]),
+		?DEBUG("TRESOURCE ~p~n", [Tresource]),
+		?DEBUG("MID ~p", [Mid]),
 		BodyXmlObj = xml:get_subtag(Packet, <<"body">>),
 		SentOnXmlObj = xml:get_subtag(Packet, <<"sent_on">>),
 		SentOn = case SentOnXmlObj of false -> false; _ -> xml:get_tag_attr_s(<<"sent_on">>, SentOnXmlObj) end,
@@ -161,7 +164,7 @@ prepare_message_for_rabbitmq(FromToPacket) ->
 		},
 		Pred = fun(K,V) -> not is_boolean(V) end,
 		QueueMessage = jiffy:encode(maps:filter(Pred, QueueMessageMap)),
-		?INFO_MSG("BODY ~p", [QueueMessage]),
+		?DEBUG("BODY ~p", [QueueMessage]),
 		{ok, queued_to_rabbitmq, QueueMessage};
 	<<"iq">> ->
 		{ok, iq_message};
@@ -180,7 +183,7 @@ get_message_type(ReceivedXmlObj, DisplayedXmlObj, BodyXmlObj) ->
 
 
 push_message_to_queue(MessageStrList) ->
-    ?INFO_MSG("MSG JSON ~p~n", [jiffy:encode(MessageStrList)]),
+    ?INFO_MSG("MSG Sending to RabbitMQ ~p~n", [MessageStrList]),
     {ok, RabbitConnection} = get_rabbitmq_client(),
     {ok, Channel} = amqp_connection:open_channel(RabbitConnection),
     amqp_channel:call(Channel, #'exchange.declare'{exchange = <<"sender_receiver">>}),
@@ -191,6 +194,7 @@ push_message_to_queue(MessageStrList) ->
                         exchange = <<"sender_receiver">>,
                         routing_key = <<"EjabOutQ">>},
                       #amqp_msg{payload = MessageStrList}),
+    ?INFO_MSG("MSG Sent to RabbitMQ ~p~n", [MessageStrList]),
     ok = amqp_channel:close(Channel),
     ok.
 
