@@ -83,8 +83,8 @@ start_link(Host, Opts) ->
                            [Host, Opts], []).
 
 start(Host, Opts) ->
-    ?INFO_MSG("Boss this is Host ~p", [Host]),
-    ?INFO_MSG("Boss these are Opts ~p", [Opts]),
+    ?INFO_MSG("ModMTRouterListener Host ~p", [Host]),
+    ?INFO_MSG("ModMTRouterListener Opts ~p", [Opts]),
     Proc = gen_mod:get_module_proc(Host, ?PROCNAME),
     ChildSpec = {Proc, {?MODULE, start_link, [Host, Opts]},
                  transient, 1000, worker, [?MODULE]},
@@ -128,14 +128,15 @@ handle_info(_Info, State) ->
     	{'basic.consume_ok', Tag} ->
 		?INFO_MSG("Basic consume_ok ~p", [Tag]);
     	{{'basic.deliver', _, _, _, Exchange, Queue}, {amqp_msg,{_,_,_,_,_,_,_,_,_,_,_,_,_,_,_},MessageStr}} ->
+		?INFO_MSG("Message received ~p", [MessageStr]),
                 MessageJson = jiffy:decode(MessageStr, [return_maps]),
 		FromJid = jlib:make_jid(maps:get(<<"from_user">>, MessageJson),maps:get(<<"from_domain">>, MessageJson),maps:get(<<"from_resource">>,MessageJson)),
 	 	ToJid = jlib:make_jid(maps:get(<<"to_user">>, MessageJson), maps:get(<<"to_domain">>, MessageJson),maps:get(<<"to_resource">>, MessageJson)),
 		MessageType = maps:get(<<"type">>, MessageJson),
 		Mid = maps:get(<<"mid">>, MessageJson),
-		?INFO_MSG("Message from ~p", [FromJid]),
-		?INFO_MSG("Message to ~p", [ToJid]),
-		?INFO_MSG("Message mid ~p", [Mid]),
+		?DEBUG("Message from ~p", [FromJid]),
+		?DEBUG("Message to ~p", [ToJid]),
+		?DEBUG("Message mid ~p", [Mid]),
 		case MessageType of 
 			<<"jabber_msg">> ->	
 				SentOn = maps:get(<<"sent_on">>, MessageJson),
@@ -146,7 +147,7 @@ handle_info(_Info, State) ->
 					[{<<"xml:lang">>,<<"en">>},{<<"from">>,jlib:jid_to_string(FromJid)},{<<"id">>, Mid},{<<"type">>,<<"chat">>},{<<"to">>,jlib:jid_to_string(ToJid)},{<<"mt_routed">>,<<"true">>}, {<<"chat_thread">>, Chat}, {<<"sent_on">>, SentOn}, {<<"msg_type">>, MsgType}],[{xmlel,<<"body">>,[],[{xmlcdata, MsgBody}]},{xmlel,<<"markable">>,[{<<"xmlns">>,<<"urn:xmpp:chat-markers:0">>}],[]}]},
 				ejabberd_router:route(FromJid, ToJid, XmlBody);
 			<<"jabber_msg_received">> ->
-				XmlBody = {xmlel,<<"message">>,[{<<"to">>,jlib:jid_to_string(ToJid)},{<<"type">>,<<"chat">>},{<<"mt_routed">>,<<"true">>},{<<"id">>,Mid}],[{xmlel,<<"displayed">>,[{<<"xmlns">>,<<"urn:xmpp:chat-markers:0">>},{<<"id">>,maps:get(<<"received">>,MessageJson)}],[{xmlcdata,maps:get(<<"received">>,MessageJson)}]},{xmlel,<<"meta">>,[],[]}]},
+				XmlBody = {xmlel,<<"message">>,[{<<"to">>,jlib:jid_to_string(ToJid)},{<<"type">>,<<"chat">>},{<<"mt_routed">>,<<"true">>},{<<"id">>,Mid}],[{xmlel,<<"received">>,[{<<"xmlns">>,<<"urn:xmpp:chat-markers:0">>},{<<"id">>,maps:get(<<"received">>,MessageJson)}],[{xmlcdata,maps:get(<<"received">>,MessageJson)}]},{xmlel,<<"meta">>,[],[]}]},
 				ejabberd_router:route(FromJid, ToJid, XmlBody);
 			<<"jabber_msg_displayed">> ->
                                 XmlBody = {xmlel,<<"message">>,[{<<"to">>,jlib:jid_to_string(ToJid)},{<<"type">>,<<"chat">>},{<<"mt_routed">>,<<"true">>},{<<"id">>,Mid}],[{xmlel,<<"displayed">>,[{<<"xmlns">>,<<"urn:xmpp:chat-markers:0">>},{<<"id">>,maps:get(<<"displayed">>,MessageJson)}],[{xmlcdata,maps:get(<<"displayed">>,MessageJson)}]},{xmlel,<<"meta">>,[],[]}]},
