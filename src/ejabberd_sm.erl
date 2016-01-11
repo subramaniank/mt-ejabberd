@@ -590,7 +590,10 @@ is_privacy_allow(From, To, Packet, PrivacyList) ->
 route_message(From, To, Packet, Type) ->
     LUser = To#jid.luser,
     LServer = To#jid.lserver,
-    PrioRes = get_user_present_resources(LUser, LServer),
+    LResource = To#jid.lresource,
+    PrioRes1 = get_user_present_resources(LUser, LServer),
+    PrioRes = lists:filter(fun({_, Y}) -> Y == LResource end, PrioRes1),
+    ?DEBUG("User present resources ~p~n", [PrioRes]),
     case catch lists:max(PrioRes) of
       {Priority, _R}
 	  when is_integer(Priority), Priority >= 0 ->

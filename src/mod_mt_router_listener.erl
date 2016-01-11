@@ -143,8 +143,9 @@ handle_info(_Info, State) ->
 				MsgBody = maps:get(<<"body">>, MessageJson),
 				Chat = maps:get(<<"chat_thread">>, MessageJson),
 				MsgType = maps:get(<<"msg_type">>, MessageJson),
+				Consumer = maps:get(<<"consumer">>, MessageJson),
 				XmlBody = {xmlel, <<"message">>,
-					[{<<"xml:lang">>,<<"en">>},{<<"from">>,jlib:jid_to_string(FromJid)},{<<"id">>, Mid},{<<"type">>,<<"chat">>},{<<"to">>,jlib:jid_to_string(ToJid)},{<<"mt_routed">>,<<"true">>}, {<<"chat_thread">>, Chat}, {<<"sent_on">>, SentOn}, {<<"msg_type">>, MsgType}],[{xmlel,<<"body">>,[],[{xmlcdata, MsgBody}]},{xmlel,<<"markable">>,[{<<"xmlns">>,<<"urn:xmpp:chat-markers:0">>}],[]}]},
+					[{<<"xml:lang">>,<<"en">>},{<<"from">>,jlib:jid_to_string(FromJid)},{<<"id">>, Mid},{<<"type">>,<<"chat">>},{<<"to">>,jlib:jid_to_string(ToJid)},{<<"mt_routed">>,<<"true">>}, {<<"chat_thread">>, Chat}, {<<"sent_on">>, SentOn}, {<<"consumer">>, Consumer}, {<<"msg_type">>, MsgType}],[{xmlel,<<"body">>,[],[{xmlcdata, MsgBody}]},{xmlel,<<"markable">>,[{<<"xmlns">>,<<"urn:xmpp:chat-markers:0">>}],[]}]},
 				ejabberd_router:route(FromJid, ToJid, XmlBody);
 			<<"jabber_msg_received">> ->
 				XmlBody = {xmlel,<<"message">>,[{<<"to">>,jlib:jid_to_string(ToJid)},{<<"type">>,<<"chat">>},{<<"mt_routed">>,<<"true">>},{<<"id">>,Mid}],[{xmlel,<<"received">>,[{<<"xmlns">>,<<"urn:xmpp:chat-markers:0">>},{<<"id">>,maps:get(<<"received">>,MessageJson)}],[{xmlcdata,maps:get(<<"received">>,MessageJson)}]},{xmlel,<<"meta">>,[],[]}]},
